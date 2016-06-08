@@ -52,8 +52,9 @@
 
     <!-- INFO -->
     <div class="col-xs-offset-4 col-xs-3" style="margin-bottom:10px;">
-      <button class="btn btn-success" ng-click="init()" style="margin-bottom:10px;"><i class="fa fa-smile-o"></i> Reset</button>
-      <div><i class="fa fa-bomb"></i> {{ mineCells.length }} Mines</div>
+      <button class="btn btn-success" ng-click="init()"><i class="fa fa-smile-o"></i> Reset</button>
+      <button class="btn btn-warning" ng-click="cheat = !cheat"><i class="fa fa-smile-o"></i> Cheat</button>
+      <div><i class="fa fa-bomb"></i> {{ remaining }} Mines</div>
       <div><i class="fa fa-clock-o"></i> {{ counter }} Time</div>
     </div>
 
@@ -61,7 +62,7 @@
     <div class="col-xs-offset-4 col-xs-4">
       <table border="1" bordercolor="#999" ng-class="lostBorder()">
         <tr ng-repeat="row in grid">
-          <td class="text-center shadow" ng-class="squareColor($parent.$index, $index)" ng-repeat="box in row track by $index" ng-click="playWithFire($parent.$index, $index, $event)" style="width:25px; height:25px">
+          <td class="text-center" ng-class="squareColor($parent.$index, $index)" ng-repeat="box in row track by $index" ng-click="playWithFire($parent.$index, $index, $event)" style="width:25px; height:25px">
             <span ng-if="!box.visible"></span>
             <span ng-if="cellCheck(box)" ng-class="textColor(box)"><b>{{ box.value > 0 ? box.value : '' }}</b></span>
             <span ng-if="bombCheck(box)"><i class="fa fa-bomb"></i></span>
@@ -79,6 +80,9 @@
 
         // VARIABLES //
         ///////////////
+
+        $scope.totalVisible = 0;
+        $scope.activeGame = false;
 
         // Options for the game's difficulty //
         $scope.options = [{
@@ -105,6 +109,9 @@
         $scope.counter = 0;
         var timer = $timeout($scope.timerCount,1000);
 
+        // Cheat Mode //
+        $scope.cheat = false;
+
         // SCOPE FUNCTIONS //
         /////////////////////
 
@@ -115,6 +122,7 @@
           $scope.mineCells = [];
           $scope.counter = 0;
           $scope.stopTimer();
+          $scope.activeGame = true;
 
           if ($scope.difficulty) {
             $scope.height = $scope.difficulty.height;
@@ -134,15 +142,17 @@
             $scope.startTimer();
           }
 
-          if (!key && !flagged) {
-            if (val === -1) {
-              gameOver();
+          if ($scope.activeGame) {
+            if (!key && !flagged) {
+              if (val === -1) {
+                gameOver();
+              } else {
+                floodCells(x, y);
+              }
             } else {
-              floodCells(x, y);
-            }
-          } else {
-            if (!visible && key) {
-              $scope.grid[x][y].flagged = !$scope.grid[x][y].flagged;
+              if (!visible && key) {
+                mineCount(x, y);
+              }
             }
           }
         }
@@ -157,7 +167,7 @@
         }
 
         $scope.squareColor = function(x, y) {
-          if ($scope.grid[x][y].visible) {
+          if ($scope.grid[x][y].visible || $scope.cheat) {
             if ($scope.grid[x][y].value < 0) {
               return "mine";
             } else if ($scope.grid[x][y].value === 0) {
@@ -242,6 +252,10 @@
               i--;
             }
           }
+
+          // Set count to remainder for flag interaction //
+          $scope.totalCells = h*w-$scope.mineCells.length;
+          $scope.remaining = $scope.mineCells.length;
         }
 
         // Determines the value of the cells adjacent to the mine //
@@ -294,7 +308,10 @@
             neighbor(x, y, false);
           } else if (val > 0) {
             $scope.grid[x][y].visible = true;
-            return;
+            $scope.totalVisible++;
+            if ($scope.totalVisible === $scope.totalCells) {
+              victory();
+            }
           }
         }
 
@@ -304,8 +321,16 @@
 
           if (val > 0 && !visible) {
             $scope.grid[x][y].visible = true;
+            $scope.totalVisible++;
+            if ($scope.totalVisible === $scope.totalCells) {
+              victory();
+            }
           } else if (val <= 0 && !visible) {
             $scope.grid[x][y].visible = true;
+            $scope.totalVisible++;
+            if ($scope.totalVisible === $scope.totalCells) {
+              victory();
+            }
             $scope.emptyCells.push([x, y]);
             _.map($scope.emptyCells, function(cell) {
               return neighbor(cell[0], cell[1]);
@@ -313,12 +338,31 @@
           }
         }
 
+        function mineCount(x, y) {
+          var flag = $scope.grid[x][y].flagged;
+          if (flag) {
+            $scope.grid[x][y].flagged = false;
+            $scope.remaining++;
+          } else if (!flag && $scope.remaining) {
+            $scope.grid[x][y].flagged = true;
+            $scope.remaining--;
+          }
+        }
+
+        function victory() {
+          window.alert("You win!");
+          $scope.init();
+        }
+
         function gameOver() {
+          $scope.activeGame = false;
           _.map($scope.mineCells, function(mine) {
-            return $scope.grid[mine[0]][mine[1]].visible = true;
+            $scope.grid[mine[0]][mine[1]].flagged = false;
+            $scope.grid[mine[0]][mine[1]].visible = true;
           });
 
           $scope.stopTimer();
+          window.alert("You lose!");
         }
 
         // INIT //
