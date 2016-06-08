@@ -3,6 +3,10 @@
 <html lang="en">
 
 <style>
+  table {
+    box-shadow: 1px 1px 1px #999;
+  }
+
   .mine {
     background-color: red;
   }
@@ -46,17 +50,18 @@
       <hr>
     </div>
 
-    <!-- BUTTONS -->
-    <div>
-      <button class="btn btn-success" ng-click="init()"><i class="fa fa-smile-o"></i> New Game</button>
+    <!-- INFO -->
+    <div class="col-xs-offset-4 col-xs-3" style="margin-bottom:10px;">
+      <button class="btn btn-success" ng-click="init()" style="margin-bottom:10px;"><i class="fa fa-smile-o"></i> Reset</button>
+      <div><i class="fa fa-bomb"></i> {{ mineCells.length }} Mines</div>
+      <div><i class="fa fa-clock-o"></i> {{ counter }} Time</div>
     </div>
-    <br>
 
     <!-- GAME grid -->
-    <div class="col-md-offset-2 col-md-8">
-      <table border="1" bordercolor="#999">
+    <div class="col-xs-offset-4 col-xs-4">
+      <table border="1" bordercolor="#999" ng-class="lostBorder()">
         <tr ng-repeat="row in grid">
-          <td class="text-center" ng-class="squareColor($parent.$index, $index)" ng-repeat="box in row track by $index" ng-click="playWithFire($parent.$index, $index, $event)" style="width:25px; height:25px">
+          <td class="text-center shadow" ng-class="squareColor($parent.$index, $index)" ng-repeat="box in row track by $index" ng-click="playWithFire($parent.$index, $index, $event)" style="width:25px; height:25px">
             <span ng-if="!box.visible"></span>
             <span ng-if="cellCheck(box)" ng-class="textColor(box)"><b>{{ box.value > 0 ? box.value : '' }}</b></span>
             <span ng-if="bombCheck(box)"><i class="fa fa-bomb"></i></span>
@@ -70,12 +75,10 @@
   <!-- ANGULAR -->
   <script>
     angular.module("glApp", [])
-      .controller("glCtrl", function($scope, $interval) {
+      .controller("glCtrl", function($scope, $timeout) {
 
         // VARIABLES //
         ///////////////
-
-        $scope.emptyCells = [];
 
         // Options for the game's difficulty //
         $scope.options = [{
@@ -98,11 +101,20 @@
         // Inits the game with "Easy" as the selected difficulty //
         $scope.difficulty = $scope.options[0];
 
+        // Timer functionality //
+        $scope.counter = 0;
+        var timer = $timeout($scope.timerCount,1000);
+
         // SCOPE FUNCTIONS //
         /////////////////////
 
         $scope.init = function() {
           // Determine the size of the table //
+
+          $scope.emptyCells = [];
+          $scope.mineCells = [];
+          $scope.counter = 0;
+          $scope.stopTimer();
 
           if ($scope.difficulty) {
             $scope.height = $scope.difficulty.height;
@@ -110,7 +122,6 @@
           }
 
           buildGrid($scope.height, $scope.width);
-          placeMines();
         };
 
         $scope.playWithFire = function(x, y, $event) {
@@ -118,6 +129,10 @@
             visible = $scope.grid[x][y].visible,
             flagged = $scope.grid[x][y].flagged,
             key = $event.ctrlKey;
+
+          if (!$scope.counter) {
+            $scope.startTimer();
+          }
 
           if (!key && !flagged) {
             if (val === -1) {
@@ -130,6 +145,15 @@
               $scope.grid[x][y].flagged = !$scope.grid[x][y].flagged;
             }
           }
+        }
+
+        $scope.startTimer = function(){
+          $scope.counter++;
+          timer = $timeout($scope.startTimer,1000);
+        }
+
+        $scope.stopTimer = function(){
+          $timeout.cancel(timer);
         }
 
         $scope.squareColor = function(x, y) {
@@ -210,8 +234,12 @@
 
             // Make sure we aren't creating duplicate mines! //
             if ($scope.grid[x][y].value === 0) {
+              $scope.mineCells.push([x, y]);
               $scope.grid[x][y].value = -1;
               neighbor(x, y, true);
+            } else {
+              // If there was a duplicate, remove one and redo //
+              i--;
             }
           }
         }
@@ -286,8 +314,11 @@
         }
 
         function gameOver() {
-          window.confirm("Game Over! Try again.");
-          $scope.init();
+          _.map($scope.mineCells, function(mine) {
+            return $scope.grid[mine[0]][mine[1]].visible = true;
+          });
+
+          $scope.stopTimer();
         }
 
         // INIT //
