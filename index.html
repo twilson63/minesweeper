@@ -70,19 +70,6 @@
   <!-- ANGULAR -->
   <script>
     angular.module("glApp", [])
-      .directive('ngRightClick', function($parse) {
-        return function(scope, element, attrs) {
-          var fn = $parse(attrs.ngRightClick);
-          element.bind('contextmenu', function(event) {
-            scope.$apply(function() {
-              event.preventDefault();
-              fn(scope, {
-                $event: event
-              });
-            });
-          });
-        };
-      })
       .controller("glCtrl", function($scope, $interval) {
 
         // VARIABLES //
@@ -277,7 +264,7 @@
 
           if (val === 0) {
             neighbor(x, y, false);
-          } else {
+          } else if (val > 0) {
             $scope.grid[x][y].visible = true;
             return;
           }
@@ -287,10 +274,9 @@
           var val = $scope.grid[x][y].value,
             visible = $scope.grid[x][y].visible;
 
-          if (val && !visible) {
+          if (val > 0 && !visible) {
             $scope.grid[x][y].visible = true;
-            return;
-          } else if (!val && !visible) {
+          } else if (val <= 0 && !visible) {
             $scope.grid[x][y].visible = true;
             $scope.emptyCells.push([x, y]);
             _.map($scope.emptyCells, function(cell) {
