@@ -75,39 +75,22 @@
 
   <!-- ANGULAR -->
   <script>
-    angular.module("glApp", [])
-      .controller("glCtrl", function($scope, $timeout) {
+    angular.module('glApp', [])
+      .controller('glCtrl', function($scope, $timeout) {
 
         // VARIABLES //
         ///////////////
 
         $scope.totalVisible = 0;
-        $scope.activeGame = false;
+        var activeGame = false;
 
-        // Options for the game's difficulty //
-        $scope.options = [{
-          name: "Easy",
-          height: 10,
-          width: 10,
-          mines: 10
-        }, {
-          name: "Normal",
-          height: 10,
-          width: 10,
-          mines: 20
-        }, {
-          name: "Hard",
-          height: 10,
-          width: 10,
-          mines: 60
-        }];
-
-        // Inits the game with "Easy" as the selected difficulty //
-        $scope.difficulty = $scope.options[0];
+        $scope.height = 10;
+        $scope.width = 10;
+        var totalMines = 10;
 
         // Timer functionality //
         $scope.counter = 0;
-        var timer = $timeout($scope.timerCount,1000);
+        var timer = $timeout($scope.timerCount, 1000);
 
         // Cheat Mode //
         $scope.cheat = false;
@@ -116,96 +99,97 @@
         /////////////////////
 
         $scope.init = function() {
-          // Determine the size of the table //
+          init();
+        }
 
-          $scope.emptyCells = [];
-          $scope.mineCells = [];
-          $scope.counter = 0;
-          $scope.stopTimer();
-          $scope.activeGame = true;
-
-          if ($scope.difficulty) {
-            $scope.height = $scope.difficulty.height;
-            $scope.width = $scope.difficulty.width;
-          }
-
-          buildGrid($scope.height, $scope.width);
-        };
-
+        // onClick functionality //
         $scope.playWithFire = function(x, y, $event) {
           var val = $scope.grid[x][y].value,
             visible = $scope.grid[x][y].visible,
             flagged = $scope.grid[x][y].flagged,
             key = $event.ctrlKey;
 
+          // If this is the first time that the player has clicked, start the timer //
           if (!$scope.counter) {
             $scope.startTimer();
           }
 
-          if ($scope.activeGame) {
+          // If the game is active and playable (the player hasn't lost), allow them to click //
+          if (activeGame) {
             if (!key && !flagged) {
               if (val === -1) {
+                // Click on a mine? You lose //
                 gameOver();
               } else {
-                floodCells(x, y);
+                // Didn't click on a mine? Continue playing //
+                $scope.grid = floodCells(x, y, $scope.grid);
               }
             } else {
               if (!visible && key) {
+                // Counts down on the amount of flags available to be placed //
                 mineCount(x, y);
               }
             }
           }
-        }
+        };
 
-        $scope.startTimer = function(){
+        // Timer functions //
+        $scope.startTimer = function() {
           $scope.counter++;
-          timer = $timeout($scope.startTimer,1000);
-        }
+          timer = $timeout($scope.startTimer, 1000);
+        };
 
-        $scope.stopTimer = function(){
+        function stopTimer() {
           $timeout.cancel(timer);
         }
 
+
+        // ng-class functions //
         $scope.squareColor = function(x, y) {
           if ($scope.grid[x][y].visible || $scope.cheat) {
             if ($scope.grid[x][y].value < 0) {
-              return "mine";
+              return 'mine';
             } else if ($scope.grid[x][y].value === 0) {
-              return "zero";
+              return 'zero';
             }
           }
-        }
+        };
 
         $scope.textColor = function(box) {
           switch (box.value) {
             case 1:
-              return "one";
-              break;
+              return 'one';
             case 2:
-              return "two";
-              break;
+              return 'two';
             case 3:
-              return "three";
-              break;
+              return 'three';
             case 4:
-              return "four";
-              break;
+              return 'four';
             default:
               break;
           }
-        }
+        };
 
         // Check functions for the boxes //
         $scope.bombCheck = function(box) {
           return (box.visible && box.value === -1);
-        }
+        };
 
         $scope.cellCheck = function(box) {
           return (box.visible && box.value > -1);
-        }
+        };
 
         // FUNCTIONS //
         ///////////////
+
+        function init() {
+          $scope.emptyCells = []; // Collects the visible empty cells
+          $scope.mineCells = []; // Storage for the location of all mines
+          $scope.counter = 0; // Resets timer
+          stopTimer(); // Stops timer
+          activeGame = true; // Allows game to be playable
+          $scope.grid = buildGrid($scope.height, $scope.width);
+        };
 
         // Initial build of the grid of play //
         function buildGrid(height, width) {
@@ -216,6 +200,7 @@
             // Redefine the row for each loop, fresh row every time //
             var row = [];
             for (y = 0; y < width; y++) {
+              // Init new object each time, for each cell //
               var obj = {
                 value: 0,
                 visible: false,
@@ -225,94 +210,96 @@
             }
             grid.push(row);
           }
-          $scope.grid = grid;
-
-          // After the build is complete, we place the mines //
-          placeMines();
+          grid = placeMines(grid);
+          return grid; // RETURN //
         }
 
         // Places all the mines on the board //
-        function placeMines() {
-          var max = $scope.difficulty.mines,
-            h = $scope.difficulty.height,
-            w = $scope.difficulty.width,
+        function placeMines(grid) {
+          var max = totalMines,
+            h = $scope.height,
+            w = $scope.width,
             x, y, i;
 
           for (i = 0; i < max; i++) {
+
+            // Random coordinates //
             x = Math.floor(Math.random() * h);
             y = Math.floor(Math.random() * w);
 
             // Make sure we aren't creating duplicate mines! //
-            if ($scope.grid[x][y].value === 0) {
+            if (grid[x][y].value === 0) {
               $scope.mineCells.push([x, y]);
-              $scope.grid[x][y].value = -1;
-              neighbor(x, y, true);
+              grid[x][y].value = -1;
+              grid = neighbor(x, y, grid);
             } else {
               // If there was a duplicate, remove one and redo //
               i--;
             }
           }
-
-          // Set count to remainder for flag interaction //
-          $scope.totalCells = h*w-$scope.mineCells.length;
           $scope.remaining = $scope.mineCells.length;
+          return grid; // RETURN //
         }
 
         // Determines the value of the cells adjacent to the mine //
-        function neighbor(x, y, build) {
+        // Reusable because of the 'build' param, based on truthy //
+        function neighbor(x, y, grid) {
           // UPPER LEFT //
           if ((y - 1 > -1) && (x - 1 > -1)) {
-            build ? $scope.grid[x - 1][y - 1].value++ : visibleCheck(x - 1, y - 1);
+            grid ? grid[x - 1][y - 1].value++ : visibleCheck(x - 1, y - 1);
           }
 
           // UPPER MIDDLE //
           if (y - 1 > -1) {
-            build ? $scope.grid[x][y - 1].value++ : visibleCheck(x, y - 1);
+            grid ? grid[x][y - 1].value++ : visibleCheck(x, y - 1);
           }
 
           // UPPER RIGHT //
           if ((y - 1 > -1) && (x + 1 < $scope.width)) {
-            build ? $scope.grid[x + 1][y - 1].value++ : visibleCheck(x + 1, y - 1);
+            grid ? grid[x + 1][y - 1].value++ : visibleCheck(x + 1, y - 1);
           }
 
           // MIDDLE LEFT //
           if (x - 1 > -1) {
-            build ? $scope.grid[x - 1][y].value++ : visibleCheck(x - 1, y);
+            grid ? grid[x - 1][y].value++ : visibleCheck(x - 1, y);
           }
 
           // MIDDLE RIGHT //
           if (x + 1 < $scope.width) {
-            build ? $scope.grid[x + 1][y].value++ : visibleCheck(x + 1, y);
+            grid ? grid[x + 1][y].value++ : visibleCheck(x + 1, y);
           }
 
           // BOTTOM LEFT //
           if (y + 1 < $scope.height) {
-            build ? $scope.grid[x][y + 1].value++ : visibleCheck(x, y + 1);
+            grid ? grid[x][y + 1].value++ : visibleCheck(x, y + 1);
           }
 
           // BOTTOM MIDDLE //
           if (y + 1 < $scope.height && x - 1 > -1) {
-            build ? $scope.grid[x - 1][y + 1].value++ : visibleCheck(x - 1, y + 1);
+            grid ? grid[x - 1][y + 1].value++ : visibleCheck(x - 1, y + 1);
           }
 
           // BOTTOM RIGHT //
           if (y + 1 < $scope.height && x + 1 < $scope.width) {
-            build ? $scope.grid[x + 1][y + 1].value++ : visibleCheck(x + 1, y + 1);
+            grid ? grid[x + 1][y + 1].value++ : visibleCheck(x + 1, y + 1);
           }
+
+          return grid; // RETURN //
         }
 
-        function floodCells(x, y) {
-          var val = $scope.grid[x][y].value;
+        function floodCells(x, y, grid) {
+          var val = grid[x][y].value;
 
+          // If the cell has no value //
           if (val === 0) {
             neighbor(x, y, false);
+
+            // If the cell has a value //
           } else if (val > 0) {
-            $scope.grid[x][y].visible = true;
-            $scope.totalVisible++;
-            if ($scope.totalVisible === $scope.totalCells) {
-              victory();
-            }
+            grid[x][y].visible = true;
           }
+
+          return grid; // RETURN //
         }
 
         function visibleCheck(x, y) {
@@ -321,16 +308,8 @@
 
           if (val > 0 && !visible) {
             $scope.grid[x][y].visible = true;
-            $scope.totalVisible++;
-            if ($scope.totalVisible === $scope.totalCells) {
-              victory();
-            }
           } else if (val <= 0 && !visible) {
             $scope.grid[x][y].visible = true;
-            $scope.totalVisible++;
-            if ($scope.totalVisible === $scope.totalCells) {
-              victory();
-            }
             $scope.emptyCells.push([x, y]);
             _.map($scope.emptyCells, function(cell) {
               return neighbor(cell[0], cell[1]);
@@ -350,25 +329,25 @@
         }
 
         function victory() {
-          window.alert("You win!");
+          window.alert('You win!');
           $scope.init();
         }
 
         function gameOver() {
-          $scope.activeGame = false;
+          activeGame = false;
           _.map($scope.mineCells, function(mine) {
             $scope.grid[mine[0]][mine[1]].flagged = false;
             $scope.grid[mine[0]][mine[1]].visible = true;
           });
 
-          $scope.stopTimer();
-          window.alert("You lose!");
+          stopTimer();
+          window.alert('You lose!');
         }
 
         // INIT //
         //////////
 
-        $scope.init();
+        init();
 
       });
   </script>

@@ -1,0 +1,27 @@
+table {
+  box-shadow: 1px 1px 1px #999;
+}
+
+.mine {
+  background-color: red;
+}
+
+.zero {
+  background-color: #CCC;
+}
+
+.one {
+  color: green;
+}
+
+.two {
+  color: blue;
+}
+
+.three {
+  color: orange;
+}
+
+.four {
+  color: red;
+}
