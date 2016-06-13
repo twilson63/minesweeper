@@ -15,9 +15,7 @@
     "daggy": "0.0.1",
     "hyperscript": "^1.4.7",
     "hyperscript-helpers": "^3.0.0",
-    "ramda": "^0.21.0",
-    "rewire": "^2.5.1",
-    "underscore": "^1.8.3"
+    "ramda": "^0.21.0"
   },
   "devDependencies": {
     "browserify": "^13.0.1",

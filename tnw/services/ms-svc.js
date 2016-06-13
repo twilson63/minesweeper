@@ -1,10 +1,8 @@
 var { createRow, createCell, pickCell, getCell,
   getNeighbors, open } = require('../lib/utils')
+var { times, reduce, clone, equals, add, dec } = require('ramda')
 
-module.exports = function (ramda, underscore) {
-  var { times, compose, add, lensProp, curry,
-    set, dec, reduce, equals } = ramda
-  var _ = underscore
+module.exports = function () {
 
   var board = []
   var listeners = []
@@ -44,7 +42,7 @@ module.exports = function (ramda, underscore) {
       }
 
       // clone to trigger digest
-      listeners[0](_.clone(board))
+      listeners[0](clone(board))
     }
   }
 

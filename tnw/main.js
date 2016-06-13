@@ -1,10 +1,6 @@
 var angular = require('angular')
-var ramda = require('ramda')
-var underscore = require('underscore')
 
 angular.module('app', [])
-  .constant('ramda', ramda)
-  .constant('underscore', underscore)
   .factory('msSvc', require('./services/ms-svc'))
   .filter('cellstate', require('./filters').cellstate)
   .component('app', require('./components/app'))
