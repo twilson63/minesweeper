@@ -34,3 +34,10 @@ Add more game logic to the minesweeper service
 Implement a status Component
 Make the grid dynamic
 Keep score and persist scores
+
+## Technologies
+
+- ramdajs - a functional utility library that makes it very easy to isolate your logic
+- hyperscript and hyperscript-helpers - my preference to writing html or html strings, some like it some don't it works great for me.
+
+Every thing else should be vanilla angular js.

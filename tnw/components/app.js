@@ -1,3 +1,4 @@
+// app component
 const h = require('hyperscript')
 // app component
 module.exports = {
@@ -17,7 +18,6 @@ function controller(msSvc) {
     $ctrl.grid = board
   })
 }
-
 
 // pure template functions
 function template () {

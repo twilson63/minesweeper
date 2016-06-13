@@ -1,3 +1,4 @@
+// Nav Component
 const h = require('hyperscript')
 const { header, div, a, i } = require('hyperscript-helpers')(h)
 // app component

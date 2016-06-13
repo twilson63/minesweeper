@@ -1,3 +1,7 @@
+// main app mainifest
+//
+// this sets up angular and declares all components and services and filters
+
 var angular = require('angular')
 
 angular.module('app', [])

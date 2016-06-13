@@ -1,3 +1,4 @@
+// Row Component
 const h = require('hyperscript')
 const { div } = require('hyperscript-helpers')(h)
 // app component

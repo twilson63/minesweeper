@@ -1,3 +1,7 @@
+// minesweeper utils
+//
+// These are simple utility functions that are all pure
+//
 const daggy = require('daggy')
 
 var Cell = daggy.tagged('x', 'y', 'state', 'isMine')

@@ -1,3 +1,7 @@
+// minesweeper service
+//
+// this minesweeper service contains the public API to the minesweeper engine
+//
 var { createRow, createCell, pickCell, getCell,
   getNeighbors, open } = require('../lib/utils')
 var { times, reduce, clone, equals, add, dec } = require('ramda')
